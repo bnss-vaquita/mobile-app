@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    static final String TARGETURL = "130.229.182.57";
+    static final String TARGETURL = "130.229.132.247";
     static final int TARGETPORT = 3000;
     static final String TARGET_ENDPOINT = "/auth";
     static final String CLIENT_ID = "test_client";
@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         AuthTokenService service = retrofit.create(AuthTokenService.class);
-        TokenRequester tokenRequester = new TokenRequester(CLIENT_ID, CLIENT_SERCRET, "test", "password");
+        TokenRequester tokenRequester = new TokenRequester(CLIENT_ID, CLIENT_SERCRET, "test", "password", "asd");
         Call<TokenResponse> authCall = service.getToken(tokenRequester);
         authCall.enqueue(new Callback<TokenResponse>() {
             @Override
