@@ -1,70 +1,100 @@
 package bnss.mobile.a2famobile;
 
-import android.accounts.Account;
-import android.accounts.AccountManager;
-import android.accounts.AccountManagerCallback;
-import android.accounts.AccountManagerFuture;
-import android.accounts.AuthenticatorException;
-import android.accounts.OperationCanceledException;
+
 import android.content.Intent;
-import android.os.Handler;
+import android.content.SharedPreferences;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Button;
+import android.widget.EditText;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
 
 
+    public static final int LOGIN_ACTIVITY_REQUEST_CODE = 1;
+    public static final int VERIFIED_ACTIVITY_REQUEST_CODE = 2;
 
-    static final String TARGETURL = "130.229.132.247";
-    static final int TARGETPORT = 3000;
-    static final String TARGET_ENDPOINT = "/auth";
-    static final String CLIENT_ID = "test_client";
-    static final String CLIENT_SERCRET = "secret";
-
-    // auth
+    public static String access_token;
+    public static boolean loggedIn = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
+        String access_token;
 
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://" + TARGETURL + ":" + TARGETPORT)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-        AuthTokenService service = retrofit.create(AuthTokenService.class);
-        TokenRequester tokenRequester = new TokenRequester(CLIENT_ID, CLIENT_SERCRET, "test", "password", "asd");
-        Call<TokenResponse> authCall = service.getToken(tokenRequester);
-        authCall.enqueue(new Callback<TokenResponse>() {
-            @Override
-            public void onResponse(Call<TokenResponse> call, Response<TokenResponse> response) {
-                Log.e("onCreate", Integer.toString(response.code()));
-                Log.e("onCreate", response.body().access_token);
-            }
 
-            @Override
-            public void onFailure(Call<TokenResponse> call, Throwable t) {
-                Log.e("onCreate - err", "IOException: " + t.toString());
-
-            }
-        });
+/*
+        accountManager = AccountManager.get(getApplicationContext());
+        Account[] accounts = accountManager.getAccountsByType("Vaquita");
+        Account myAccount = null;
+*/
+        SharedPreferences settings = getSharedPreferences("vaquita_creds", MODE_PRIVATE);
+        String username = settings.getString("username", null);
+        String password = settings.getString("password", null);
+        if (username == null || password == null) {
+            loggedIn = false;
+        } else {
+            loggedIn = true;
+        }
+        if (!loggedIn) {
+            openLogInView();
+        } else {
+            openVerifiedView("test");
+        }
 
 
 
     }
 
+    public void openVerifiedView(String access_token) {
+        Intent intent = new Intent(this, VerifiedActiviy.class);
+        intent.putExtra("access_token", access_token);
+        startActivityForResult(intent, VERIFIED_ACTIVITY_REQUEST_CODE);
+    }
+
+    public void openLogInView() {
+        Intent intent = new Intent(this, LoginActivity.class);
+        startActivityForResult(intent,LOGIN_ACTIVITY_REQUEST_CODE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        switch (requestCode) {
+            case LOGIN_ACTIVITY_REQUEST_CODE:
+                // logInView
+                switch (resultCode) {
+                    case RESULT_OK:
+                        String access_token = data.getStringExtra("access_token");
+                        openVerifiedView(access_token);
+                        break;
+                    default:
+                        Log.e("MainActiviy: - result", "LoginActivity - resultCode: "+ resultCode);
+                        Log.e("MainActiviy: - result", "LoginActivity - intent: "+ (data != null? data.toString(): "null"));
+
+
+                }
+                break;
+            case VERIFIED_ACTIVITY_REQUEST_CODE:
+                switch (resultCode) {
+                    case RESULT_OK:
+                        Log.e("MainActivity", "User manually logged out!");
+                        openLogInView();
+                        break;
+                    default:
+                        Log.e("MainActiviy: - result", "VerifiedActivity - resultCode: "+ resultCode);
+                        Log.e("MainActiviy: - result", "VerifiedActivity - intent: "+ (data != null? data.toString(): "null"));
+
+                }
+            default:
+                super.onActivityResult(requestCode, resultCode, data);
+        }
+
+    }
     /*
         "grant_type": "password",
     "client_id": "test_client",
@@ -75,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
+/*
 
     public void getAuthToken(URL url, String username, String password) throws IOException {
         Log.e("getAuthToken", "Setting up connection");
@@ -147,4 +177,6 @@ public class MainActivity extends AppCompatActivity {
             Log.w("OnTokenAcquired -Token:", token);
         }
     };
+
+    */
 }
